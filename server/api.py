@@ -1,10 +1,10 @@
 import time
 
 from flask import request, jsonify
-
-from server import app, auth, database, reloader
-from server.models import FlagStatus
-from server.spam import is_spam_flag
+from __init__ import app
+import auth, database, reloader
+from models import FlagStatus
+from spam import is_spam_flag
 
 
 @app.route('/api/get_config')

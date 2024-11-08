@@ -10,5 +10,5 @@ for handler in app.logger.handlers:
     handler.setLevel(logging.DEBUG)
 
 
-import server.api
-import server.views
+import api
+import views

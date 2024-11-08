@@ -2,8 +2,8 @@
 
 import socket
 
-from server import app
-from server.models import FlagStatus, SubmitResult
+from __init__ import app
+from models import FlagStatus, SubmitResult
 
 
 RESPONSES = {

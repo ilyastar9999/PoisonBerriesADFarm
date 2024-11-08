@@ -8,7 +8,7 @@ import threading
 
 from flask import g
 
-from server import app
+from __init__ import app
 
 
 schema_path = os.path.join(os.path.dirname(__file__), 'schema.sql')
@@ -64,6 +64,7 @@ def get(context_bound=True):
 
     if context_bound:
         g.database = database
+    app.logger.info('DB passed')
     return database
 
 

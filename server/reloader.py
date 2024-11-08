@@ -3,7 +3,7 @@ import os
 import threading
 import importlib.util
 
-from server import app
+from __init__ import app
 
 
 _config_mtime = None

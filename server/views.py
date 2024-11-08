@@ -2,10 +2,13 @@ import re
 import time
 from datetime import datetime
 
-from flask import jsonify, render_template, request
+from flask import jsonify, render_template, request, redirect
 
-from server import app, auth, database, reloader
-from server.models import FlagStatus
+from __init__ import app
+import auth
+import database
+import reloader
+from models import FlagStatus
 
 
 @app.template_filter('timestamp_to_datetime')
@@ -36,6 +39,13 @@ def index():
 FORM_DATETIME_FORMAT = '%Y-%m-%d %H:%M'
 FLAGS_PER_PAGE = 30
 
+@app.route('/', methods=['GET', 'POST'])
+def index_redirect():
+    if request.method == 'POST':
+        response = redirect('/')
+        response.set_cookie('password', request.form['password'])
+        return response
+    return render_template('hello.html')
 
 @app.route('/ui/show_flags', methods=['POST'])
 @auth.auth_required
@@ -92,7 +102,7 @@ def post_flags_manual():
     cur_time = round(time.time())
     rows = [(item, 'Manual', '*', cur_time, FlagStatus.QUEUED.name)
             for item in flags]
-
+    app.logger.info('Inserting flags: %s', rows)
     db = database.get()
     db.executemany("INSERT OR IGNORE INTO flags (flag, sploit, team, time, status) "
                    "VALUES (?, ?, ?, ?, ?)", rows)

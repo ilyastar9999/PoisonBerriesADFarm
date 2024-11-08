@@ -1,6 +1,8 @@
 CONFIG = {
     # Don't forget to remove the old database (flags.sqlite) before each competition.
 
+    'PORT': 8080,
+
     # The clients will run sploits on TEAMS and
     # fetch FLAG_FORMAT from sploits' stdout.
     'TEAMS': {'Team #{}'.format(i): '10.0.0.{}'.format(i)
@@ -10,7 +12,7 @@ CONFIG = {
     # This configures how and where to submit flags.
     # The protocol must be a module in protocols/ directory.
 
-    'SYSTEM_PROTOCOL': 'ructf_tcp',
+    'SYSTEM_PROTOCOL': 'default',
     'SYSTEM_HOST': '127.0.0.1',
     'SYSTEM_PORT': 31337,
 
@@ -35,7 +37,7 @@ CONFIG = {
 
     # Password for the web interface. You can use it with any login.
     # This value will be excluded from the config before sending it to farm clients.
-    'SERVER_PASSWORD': '1234',
+    'SERVER_PASSWORD': 'pepez_slit',
 
     # Use authorization for API requests
     'ENABLE_API_AUTH': False,

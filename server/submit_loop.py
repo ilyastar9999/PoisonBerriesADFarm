@@ -5,8 +5,10 @@ import random
 import time
 from collections import defaultdict
 
-from server import app, database, reloader
-from server.models import Flag, FlagStatus, SubmitResult
+from __init__ import app
+import database
+import reloader
+from models import Flag, FlagStatus, SubmitResult
 
 
 def get_fair_share(groups, limit):
@@ -42,7 +44,7 @@ def get_fair_share(groups, limit):
 
 
 def submit_flags(flags, config):
-    module = importlib.import_module('server.protocols.' + config['SYSTEM_PROTOCOL'])
+    module = importlib.import_module('protocols.' + config['SYSTEM_PROTOCOL'])
 
     try:
         return list(module.submit_flags(flags, config))
