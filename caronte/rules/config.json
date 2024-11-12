@@ -1,0 +1,26 @@
+{
+  "services": [
+    {
+      "name": "web_service",
+      "port": 80,
+      "protocol": "tcp",
+      "extract_patterns": [
+        {
+          "name": "flags",
+          "pattern": "[A-Z0-9]{31}=",
+          "scope": "payload"
+        }
+      ]
+    }
+  ],
+  "teams": [
+    {
+      "name": "team1",
+      "networks": ["10.60.1.0/24"]
+    },
+    {
+      "name": "team2",
+      "networks": ["10.60.2.0/24"]
+    }
+  ]
+} 

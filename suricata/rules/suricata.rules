@@ -1,0 +1,57 @@
+# Suricata rules file
+
+# Detect CTF flag format [A-Z0-9]{31}=
+alert http any any -> any any (msg:"CTF Flag detected in HTTP"; flow:established; pcre:"/[A-Z0-9]{31}=/"; classtype:policy-violation; sid:1000001; rev:1;)
+alert dns any any -> any any (msg:"CTF Flag detected in DNS"; dns.query; pcre:"/[A-Z0-9]{31}=/"; classtype:policy-violation; sid:1000002; rev:1;)
+alert smtp any any -> any any (msg:"CTF Flag detected in SMTP"; flow:established; pcre:"/[A-Z0-9]{31}=/"; classtype:policy-violation; sid:1000003; rev:1;)
+alert tls any any -> any any (msg:"CTF Flag detected in TLS"; flow:established; pcre:"/[A-Z0-9]{31}=/"; classtype:policy-violation; sid:1000004; rev:1;)
+alert ftp-data any any -> any any (msg:"CTF Flag detected in FTP"; flow:established; pcre:"/[A-Z0-9]{31}=/"; classtype:policy-violation; sid:1000005; rev:1;)
+alert tcp any any -> any any (msg:"CTF Flag detected in TCP"; flow:established; pcre:"/[A-Z0-9]{31}=/"; classtype:policy-violation; sid:1000006; rev:1;)
+alert udp any any -> any any (msg:"CTF Flag detected in UDP"; pcre:"/[A-Z0-9]{31}=/"; classtype:policy-violation; sid:1000007; rev:1;)
+alert icmp any any -> any any (msg:"CTF Flag detected in ICMP"; content:"|00|"; pcre:"/[A-Z0-9]{31}=/"; classtype:policy-violation; sid:1000008; rev:1;)
+
+# Detect potential data exfiltration channels
+alert http any any -> any any (msg:"Large HTTP POST detected"; flow:established,to_server; content:"POST"; http_method; content_len:>1000; classtype:policy-violation; sid:1000009; rev:1;)
+alert dns any any -> any any (msg:"Suspicious long DNS query"; dns.query; content:!"|00|"; within:100; classtype:policy-violation; sid:1000010; rev:1;)
+alert icmp any any -> any any (msg:"Large ICMP packet detected"; dsize:>100; classtype:policy-violation; sid:1000011; rev:1;)
+
+# Detect common attack tools and techniques
+alert http any any -> any any (msg:"Web scanner detected"; flow:established; http.user_agent; content:"sqlmap"; content:"nikto"; content:"dirbuster"; content:"nmap"; classtype:web-application-attack; sid:1000012; rev:1;)
+alert http any any -> any any (msg:"Common web attack detected"; flow:established; content:"union"; content:"select"; content:"../../"; content:"passwd"; nocase; http.uri; classtype:web-application-attack; sid:1000013; rev:1;)
+
+# Monitor file downloads
+alert http any any -> any any (msg:"Suspicious file download"; flow:established,to_client; http.filename; content:".php"; content:".exe"; content:".sh"; content:".py"; nocase; classtype:policy-violation; sid:1000014; rev:1;)
+
+# Detect potential command injection attempts
+alert http any any -> any any (msg:"Possible command injection attempt"; flow:established,to_server; content:"&"; pcre:"/[;&|`]/"; classtype:web-application-attack; sid:1000015; rev:1;)
+# Detect potential SQL injection attempts
+alert http any any -> any any (msg:"Possible SQL injection attempt"; flow:established,to_server; pcre:"/(\%27)|(\')|(--)|(\%23)|(#)/"; classtype:web-application-attack; sid:1000016; rev:1;)
+
+# Detect potential XSS attempts
+alert http any any -> any any (msg:"Possible XSS attempt"; flow:established,to_server; pcre:"/<script>|<\/script>|<img|<iframe/i"; classtype:web-application-attack; sid:1000017; rev:1;)
+
+# Detect potential directory traversal attempts
+alert http any any -> any any (msg:"Possible directory traversal attempt"; flow:established,to_server; pcre:"/(\.\.\/|\.\.\\)/"; classtype:web-application-attack; sid:1000018; rev:1;)
+
+# Detect potential remote file inclusion attempts
+alert http any any -> any any (msg:"Possible remote file inclusion attempt"; flow:established,to_server; pcre:"/=https?:\/\/|=ftp:\/\/|=php:\/\//i"; classtype:web-application-attack; sid:1000019; rev:1;)
+
+# Detect potential local file inclusion attempts
+alert http any any -> any any (msg:"Possible local file inclusion attempt"; flow:established,to_server; pcre:"/(\/etc\/|\/proc\/|\/var\/|\.\.\/|\.\.\\)/"; classtype:web-application-attack; sid:1000020; rev:1;)
+
+# Detect potential DDoS activity
+alert tcp any any -> any any (msg:"Possible SYN flood"; flags:S,12; threshold: type both, track by_dst, count 50, seconds 10; classtype:attempted-dos; sid:1000021; rev:1;)
+alert udp any any -> any any (msg:"Possible UDP flood"; threshold: type both, track by_dst, count 100, seconds 10; classtype:attempted-dos; sid:1000022; rev:1;)
+
+# Detect potential brute force attempts
+alert tcp any any -> any 22 (msg:"Possible SSH brute force attempt"; flow:to_server; flags:S,12; threshold: type both, track by_src, count 5, seconds 30; classtype:attempted-admin; sid:1000023; rev:1;)
+alert tcp any any -> any 3389 (msg:"Possible RDP brute force attempt"; flow:to_server; flags:S,12; threshold: type both, track by_src, count 5, seconds 30; classtype:attempted-admin; sid:1000024; rev:1;)
+
+# Detect potential data exfiltration via DNS tunneling
+alert dns any any -> any any (msg:"Possible DNS tunneling"; dns.query; content:"."; depth:1; content:"."; distance:40; within:41; classtype:bad-unknown; sid:1000025; rev:1;)
+
+# Detect potential reverse shell activity
+alert tcp any any -> any any (msg:"Possible reverse shell"; flow:established,to_server; content:"|0D 0A|WHO|0D 0A|"; nocase; classtype:trojan-activity; sid:1000026; rev:1;)
+
+# Detect robots.txt requests
+alert http any any -> any any (msg:"robots.txt request"; flow:established,to_server; content:"robots.txt"; http_uri; nocase; classtype:web-application-attack; sid:1000027; rev:1;)

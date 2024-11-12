@@ -1,0 +1,52 @@
+%YAML 1.1
+---
+vars:
+  address-groups:
+    HOME_NET: "[192.168.0.0/16,10.0.0.0/8,172.16.0.0/12]"
+    EXTERNAL_NET: "!$HOME_NET"
+
+  port-groups:
+    HTTP_PORTS: "80"
+    SHELLCODE_PORTS: "!80"
+
+default-rule-path: /etc/suricata/rules
+rule-files:
+  - "*.rules"
+
+af-packet:
+  - interface: eth0
+    cluster-id: 99
+    cluster-type: cluster_flow
+    defrag: yes
+    use-mmap: yes
+    tpacket-v3: yes
+
+# Configure to work with Nginx
+app-layer:
+  protocols:
+    http:
+      enabled: yes
+      # Allow larger request/response sizes
+      request-body-limit: 10mb
+      response-body-limit: 10mb
+      # Handle proxy headers
+      custom-request-headers: ["X-Forwarded-For", "X-Real-IP"]
+    tls:
+      enabled: yes
+
+outputs:
+  - fast:
+      enabled: yes
+      filename: fast.log
+      append: yes
+
+  - eve-log:
+      enabled: yes
+      filetype: regular
+      filename: eve.json
+      types:
+        - alert
+        - http
+        - dns
+        - tls
+        - files

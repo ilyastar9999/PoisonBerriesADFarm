@@ -1,7 +1,7 @@
 CONFIG = {
     # Don't forget to remove the old database (flags.sqlite) before each competition.
 
-    'PORT': 8080,
+    'PORT': 8000,
 
     # The clients will run sploits on TEAMS and
     # fetch FLAG_FORMAT from sploits' stdout.

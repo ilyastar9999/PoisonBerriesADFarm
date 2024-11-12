@@ -1,0 +1,109 @@
+#include:
+#  - docker-compose.tasks.yaml  # Include tasks configuration
+
+services:
+  # Application service
+  farm:
+    build:
+      context: ./server/
+      dockerfile: Dockerfile
+    ports:
+      - "${FARM_PORT}:${FARM_PORT}"
+    networks:
+      - security_net
+    depends_on:
+      - suricata
+      - nginx
+
+  # Reverse proxy / Load balancer
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    networks:
+      - security_net
+    ports:
+      - "80:80"
+    depends_on:
+      - suricata
+      - modsecurity
+
+  # IDS/IPS
+  suricata:
+    build:
+      context: ./suricata/
+      dockerfile: Dockerfile
+    networks:
+      security_net:
+        ipv4_address: 172.20.0.2
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - ./suricata/suricata.yaml:/etc/suricata/suricata.yaml:ro
+      - ./suricata/rules:/etc/suricata/rules:ro
+      - ./suricata/logs:/var/log/suricata
+    environment:
+      - SURICATA_OPTIONS="-i eth0"
+
+  # WAF (ModSecurity)
+  modsecurity:
+    image: owasp/modsecurity-crs:nginx
+    networks:
+      - security_net
+    volumes:
+      - ./modsecurity/rules:/etc/modsecurity.d/rules:ro
+
+  # Network monitoring
+  caronte:
+    image: ghcr.io/eciavatta/caronte:latest
+    networks:
+      - security_net
+    depends_on:
+      - mongo
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    ports:
+      - "${CARONTE_PORT}:3333"
+    environment:
+      - MONGO_HOST=mongo
+      - MONGO_PORT=27017
+    volumes:
+      - ./caronte/rules:/rules:ro  # Custom rules directory
+    restart: unless-stopped
+
+  # Database for logs
+  mongo:
+    image: mongo:4.4
+    networks:
+      - security_net
+    volumes:
+      - mongo_data:/data/db
+
+  # WAF (ModSecurity) for tasks
+  #modsecurity_tasks:
+  #  image: owasp/modsecurity-crs:nginx
+  #  networks:
+  #    - security_net
+  #  depends_on:
+  #    - tasks  # Assuming 'tasks' is defined in docker-compose.tasks.yaml
+  #  volumes:
+  #    - ./modsecurity/rules:/etc/modsecurity.d/rules:ro
+  #  ports:
+  #    - "8081:80"  # Different port from main WAF
+
+networks:
+  security_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1  # Suricata as gateway
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "false"
+
+volumes:
+  mongo_data:
+
