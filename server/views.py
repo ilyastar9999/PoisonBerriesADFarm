@@ -109,3 +109,7 @@ def post_flags_manual():
     db.commit()
 
     return ''
+
+@app.route('/robots.txt', methods=['GET'])
+def robots_txt():
+    return 'User-agent: *\nDisallow: /'

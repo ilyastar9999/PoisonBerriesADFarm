@@ -31,30 +31,21 @@ services:
 
   # IDS/IPS
   suricata:
-    build:
-      context: ./suricata/
-      dockerfile: Dockerfile
-    privileged: true
-    networks:
-      security_net:
-        ipv4_address: 172.21.0.10
+    image: jasonish/suricata:latest
+    network_mode: "host"
+    volumes:
+      - ./suricata/logs:/var/log/suricata:rw
+      - ./suricata/rules:/etc/suricata/rules:rw
+      - ./suricata/suricata.yaml:/etc/suricata/suricata.yaml:rw
+    environment:
+      - SURICATA_OPTIONS=-vvv --af-packet -i any
+    command: -c /etc/suricata/suricata.yaml --af-packet -i any -v
     cap_add:
       - NET_ADMIN
       - NET_RAW
-      - SYS_ADMIN
-    volumes:
-      - ./suricata/suricata.yaml:/etc/suricata/suricata.yaml:ro
-      - ./suricata/rules:/etc/suricata/rules:ro
-      - ./suricata/logs:/var/log/suricata
-    environment:
-      - SURICATA_OPTIONS="-i eth0"
-    sysctls:
-      - net.ipv4.conf.all.send_redirects=0
-      - net.ipv4.conf.default.send_redirects=0
-    command: >
-      sh -c "iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE &&
-             iptables -A FORWARD -i eth0 -o eth0 -j ACCEPT &&
-             suricata ${SURICATA_OPTIONS}"
+      - SYS_NICE
+      - IPC_LOCK
+    restart: unless-stopped
 
   # WAF (ModSecurity)
   modsecurity:
@@ -108,8 +99,8 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.21.0.0/16
-          gateway: 172.21.0.1
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
     driver_opts:
       com.docker.network.bridge.enable_ip_masquerade: "false"
 
