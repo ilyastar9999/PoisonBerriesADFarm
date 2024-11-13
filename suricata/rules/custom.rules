@@ -1,0 +1,38 @@
+# Alert on potential flag exfiltration (based on your flag format from config.py)
+alert tcp any any -> $EXTERNAL_NET any (msg:"Potential Flag Exfiltration"; pcre:"/[A-Z0-9]{31}=/"; classtype:data-loss; sid:1000001; rev:1;)
+
+# Alert on suspicious POST requests
+alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"Suspicious POST Request"; flow:established,to_server; http.method; content:"POST"; http.uri; content:"/api/"; classtype:web-application-attack; sid:1000002; rev:1;)
+
+# Alert on potential SQL injection
+alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"SQL Injection Attempt"; flow:established,to_server; http.uri; content:"'"; pcre:"/(\%27)|(\')|(\-\-)|(%23)|(#)/i"; classtype:web-application-attack; sid:1000003; rev:1;)
+
+# Alert on potential XSS
+alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"XSS Attempt"; flow:established,to_server; http.uri; content:"<script"; nocase; classtype:web-application-attack; sid:1000004; rev:1;)
+
+# Monitor flag submission attempts to your farm
+alert http any any -> $HOME_NET any (msg:"Flag Submission Attempt"; flow:established,to_server; http.method; content:"POST"; http.uri; content:"/api/post_flags"; classtype:policy-violation; sid:1000005; rev:1;)
+
+# Alert on high volume of requests (potential DoS)
+alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"Potential DoS Attack"; flow:established,to_server; detection_filter:track by_src, count 100, seconds 60; classtype:attempted-dos; sid:1000006; rev:1;)
+
+# Monitor connections to caronte
+alert tcp any any -> $HOME_NET 3752 (msg:"Caronte Connection"; flow:established,to_server; classtype:network-scan; sid:1000007; rev:1;)
+
+# Alert on potential command injection
+alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"Command Injection Attempt"; flow:established,to_server; http.uri; content:"|3b|"; pcre:"/;.*(?:\b(?:cd|pwd|ls|cat|echo|rm|mv|cp|touch|chmod|chown|mkdir|rmdir|wget|curl)\b)/i"; classtype:attempted-admin; sid:1000008; rev:1;) \
+
+# Alert on robots.txt Request
+alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"robots.txt Request"; flow:established,to_server; app-layer-protocol:http; content:"GET"; http_method; content:"/robots.txt"; http_uri; nocase; classtype:web-application-activity; sid:1000009; rev:2;)
+
+#log everything
+alert http $EXTERNAL_NET any -> $HOME_NET any (msg:"Log Everything"; flow:established,to_server; app-layer-protocol:http; content:"GET"; http_method; content:"/robots.txt"; http_uri; nocase; classtype:web-application-activity; sid:1000010; rev:2;)
+
+# Basic HTTP traffic rule
+alert http any any -> any any (msg:"HTTP Traffic"; flow:established,to_server; app-layer-protocol:http; sid:1000001; rev:1;)
+
+# robots.txt specific rule
+alert http any any -> any any (msg:"Robots.txt Access"; flow:established,to_server; content:"GET"; http_method; content:"/robots.txt"; http_uri; sid:1000002; rev:1;)
+
+# All TCP traffic rule
+alert tcp any any -> any any (msg:"TCP Traffic"; flow:established; sid:1000003; rev:1;)
