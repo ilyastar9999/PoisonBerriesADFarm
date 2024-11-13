@@ -13,7 +13,6 @@ services:
       - security_net
     depends_on:
       - suricata
-      - nginx
 
   # Reverse proxy / Load balancer
   nginx:
@@ -28,24 +27,34 @@ services:
     depends_on:
       - suricata
       - modsecurity
+      - farm
 
   # IDS/IPS
   suricata:
     build:
       context: ./suricata/
       dockerfile: Dockerfile
+    privileged: true
     networks:
       security_net:
-        ipv4_address: 172.20.0.2
+        ipv4_address: 172.21.0.10
     cap_add:
       - NET_ADMIN
       - NET_RAW
+      - SYS_ADMIN
     volumes:
       - ./suricata/suricata.yaml:/etc/suricata/suricata.yaml:ro
       - ./suricata/rules:/etc/suricata/rules:ro
       - ./suricata/logs:/var/log/suricata
     environment:
       - SURICATA_OPTIONS="-i eth0"
+    sysctls:
+      - net.ipv4.conf.all.send_redirects=0
+      - net.ipv4.conf.default.send_redirects=0
+    command: >
+      sh -c "iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE &&
+             iptables -A FORWARD -i eth0 -o eth0 -j ACCEPT &&
+             suricata ${SURICATA_OPTIONS}"
 
   # WAF (ModSecurity)
   modsecurity:
@@ -99,8 +108,8 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.20.0.0/16
-          gateway: 172.20.0.1  # Suricata as gateway
+        - subnet: 172.21.0.0/16
+          gateway: 172.21.0.1
     driver_opts:
       com.docker.network.bridge.enable_ip_masquerade: "false"
 

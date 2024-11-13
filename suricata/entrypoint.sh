@@ -12,4 +12,4 @@ ip link add name mon0 type dummy
 ip link set mon0 up
 
 # Start Suricata with monitoring
-exec suricata -c /etc/suricata/suricata.yaml --af-packet 
+exec suricata -c /etc/suricata/suricata.yaml --af-packet > /var/log/suricata/suricata.log 2>&1

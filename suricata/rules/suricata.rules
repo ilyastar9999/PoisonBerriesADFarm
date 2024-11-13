@@ -11,19 +11,12 @@ alert udp any any -> any any (msg:"CTF Flag detected in UDP"; pcre:"/[A-Z0-9]{31
 alert icmp any any -> any any (msg:"CTF Flag detected in ICMP"; content:"|00|"; pcre:"/[A-Z0-9]{31}=/"; classtype:policy-violation; sid:1000008; rev:1;)
 
 # Detect potential data exfiltration channels
-alert http any any -> any any (msg:"Large HTTP POST detected"; flow:established,to_server; content:"POST"; http_method; content_len:>1000; classtype:policy-violation; sid:1000009; rev:1;)
 alert dns any any -> any any (msg:"Suspicious long DNS query"; dns.query; content:!"|00|"; within:100; classtype:policy-violation; sid:1000010; rev:1;)
 alert icmp any any -> any any (msg:"Large ICMP packet detected"; dsize:>100; classtype:policy-violation; sid:1000011; rev:1;)
 
 # Detect common attack tools and techniques
 alert http any any -> any any (msg:"Web scanner detected"; flow:established; http.user_agent; content:"sqlmap"; content:"nikto"; content:"dirbuster"; content:"nmap"; classtype:web-application-attack; sid:1000012; rev:1;)
-alert http any any -> any any (msg:"Common web attack detected"; flow:established; content:"union"; content:"select"; content:"../../"; content:"passwd"; nocase; http.uri; classtype:web-application-attack; sid:1000013; rev:1;)
 
-# Monitor file downloads
-alert http any any -> any any (msg:"Suspicious file download"; flow:established,to_client; http.filename; content:".php"; content:".exe"; content:".sh"; content:".py"; nocase; classtype:policy-violation; sid:1000014; rev:1;)
-
-# Detect potential command injection attempts
-alert http any any -> any any (msg:"Possible command injection attempt"; flow:established,to_server; content:"&"; pcre:"/[;&|`]/"; classtype:web-application-attack; sid:1000015; rev:1;)
 # Detect potential SQL injection attempts
 alert http any any -> any any (msg:"Possible SQL injection attempt"; flow:established,to_server; pcre:"/(\%27)|(\')|(--)|(\%23)|(#)/"; classtype:web-application-attack; sid:1000016; rev:1;)
 
@@ -53,5 +46,21 @@ alert dns any any -> any any (msg:"Possible DNS tunneling"; dns.query; content:"
 # Detect potential reverse shell activity
 alert tcp any any -> any any (msg:"Possible reverse shell"; flow:established,to_server; content:"|0D 0A|WHO|0D 0A|"; nocase; classtype:trojan-activity; sid:1000026; rev:1;)
 
-# Detect robots.txt requests
-alert http any any -> any any (msg:"robots.txt request"; flow:established,to_server; content:"robots.txt"; http_uri; nocase; classtype:web-application-attack; sid:1000027; rev:1;)
+# Fix for rule 1000009 (Large HTTP POST)
+alert http any any -> any any (msg:"Large HTTP POST detected"; flow:established,to_server; content:"POST"; http_method; dsize:>1000; classtype:policy-violation; sid:1000009; rev:1;)
+
+# Fix for rule 1000013 (Web attack)
+alert http any any -> any any (msg:"Common web attack detected"; flow:established; content:"union"; nocase; http_uri; content:"select"; nocase; http_uri; content:"../../"; http_uri; content:"passwd"; nocase; http_uri; classtype:web-application-attack; sid:1000013; rev:1;)
+
+# Fix for rule 1000014 (Suspicious file download)
+alert http any any -> any any (msg:"Suspicious file download"; flow:established,to_client; content:".php"; nocase; http_filename; content:".exe"; nocase; http_filename; content:".sh"; nocase; http_filename; content:".py"; nocase; http_filename; classtype:policy-violation; sid:1000014; rev:1;)
+
+# Fix for rule 1000015 (Command injection)
+alert http any any -> any any (msg:"Possible command injection attempt"; flow:established,to_server; content:"&"; pcre:"/[;&|`\x60]/"; classtype:web-application-attack; sid:1000015; rev:1;)
+
+# Fix for robots.txt rules (1000027, 1000028, 1000029)
+alert http any any -> any any (msg:"robots.txt request"; flow:established,to_server; content:"/robots.txt"; nocase; http_uri; classtype:web-application-activity; sid:1000027; rev:2;)
+
+alert http any any -> any any (msg:"robots.txt HEAD request"; flow:established,to_server; content:"HEAD"; http_method; content:"/robots.txt"; nocase; http_uri; classtype:web-application-activity; sid:1000028; rev:1;)
+
+alert http any any -> any any (msg:"robots.txt GET request"; flow:established,to_server; content:"GET"; http_method; content:"/robots.txt"; nocase; http_uri; classtype:web-application-activity; sid:1000029; rev:1;)
